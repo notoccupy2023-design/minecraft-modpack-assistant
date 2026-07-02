@@ -1,0 +1,4 @@
+interface:
+  display_name: "我的世界整合包助手"
+  short_description: "分析我的世界整合包目录并生成中文攻略和模组索引页面"
+  default_prompt: "Use $minecraft-modpack-assistant to analyze a Minecraft modpack folder and generate a Chinese offline HTML guide."
