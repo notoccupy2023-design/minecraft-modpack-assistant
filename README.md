@@ -25,18 +25,3 @@ config/
 ```powershell
 python scripts/modpack_scan.py <整合包目录> --json
 ```
-
-## 快捷键规则
-
-真实绑定只来自客户端 `options.txt` 的 `key_...:key.keyboard...` 行。
-
-如果没有检测到真实绑定，应显示：
-
-- `未绑定`
-- Mod 声明的快捷键名称
-
-## 安全原则
-
-- 不删除、移动或修改 `mods/` 内的 jar 文件。
-- 生成的 HTML 指南可重复生成；Mod jar 和本地配置是源输入。
-- CurseForge/Modrinth/GitHub 是来源提示，不是加载器。
