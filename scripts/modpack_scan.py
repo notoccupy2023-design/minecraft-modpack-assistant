@@ -11,6 +11,7 @@ import csv
 import json
 import re
 import sys
+from urllib.parse import quote_plus
 import zipfile
 from pathlib import Path
 
@@ -33,7 +34,19 @@ def clean_name(filename: str) -> str:
 
 
 def metadata_from_jar(jar: Path, real_bindings: dict[str, str] | None = None) -> dict:
-    result = {"jar": jar.name, "loader": "unknown", "sourceHint": "unknown", "homepage": "", "modId": "", "name": "", "description": "", "keybinds": []}
+    search_name = clean_name(jar.name)
+    result = {
+        "jar": jar.name,
+        "loader": "unknown",
+        "sourceHint": "unknown",
+        "homepage": "",
+        "modId": "",
+        "name": "",
+        "searchName": search_name,
+        "curseForgeSearch": f"https://www.curseforge.com/minecraft/search?search={quote_plus(search_name)}",
+        "description": "",
+        "keybinds": [],
+    }
     try:
         with zipfile.ZipFile(jar) as zf:
             names = set(zf.namelist())
@@ -139,7 +152,16 @@ def scan(root: Path) -> list[dict]:
     if not mods.exists():
         raise SystemExit(f"mods folder not found: {mods}")
     real_bindings = read_options_keybinds(root)
-    return [metadata_from_jar(path, real_bindings) for path in sorted(mods.glob("*.jar"), key=lambda p: p.name.lower())]
+    rows = [metadata_from_jar(path, real_bindings) for path in sorted(mods.glob("*.jar"), key=lambda p: p.name.lower())]
+    deduped = []
+    seen = set()
+    for row in rows:
+        key = (row.get("modId") or row["searchName"]).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+    return deduped
 
 
 def main() -> None:

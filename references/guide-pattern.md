@@ -17,6 +17,8 @@ For Fabric/Quilt jars, parse `fabric.mod.json` or `quilt.mod.json` and capture `
 
 If metadata is missing, derive a readable name from the jar filename and mark confidence low in internal reasoning; do not expose uncertainty noisily unless it affects the guide.
 
+For CurseForge lookup, search with the cleaned jar name, not the full filename. Strip Minecraft versions, mod versions, loader suffixes, and beta/release tags; for example `Argentina's delight 1.20.1 (3.0 beta).jar` becomes `Argentina's delight`. If multiple CurseForge results appear, use the first result unless a local metadata URL proves a better match.
+
 ## Loader and Source Hints
 
 Detect loader from metadata files: `META-INF/mods.toml` means Forge, `fabric.mod.json` means Fabric, and `quilt.mod.json` means Quilt. Detect source hints from `displayURL`, Fabric/Quilt contact homepage, or known domains in filenames/metadata. Use `curseforge`, `modrinth`, `github`, or `unknown`. Do not label CurseForge as a loader.
@@ -53,11 +55,18 @@ Recommended nav:
 
 ## Card Content Policy
 
-Write for “how to play”, not just “what it is”. Each card should answer:
+Keep each mod card independent. Do not merge several mods into one gameplay summary, and do not rewrite the mod index into a pack攻略. Preserve the original mod page structure as much as the card format allows.
 
-- What does this mod add to the pack?
-- What item, block, UI, or key should the player use first?
-- How does it connect to the pack route?
+Use the mod page's own description first. Extract and translate these parts when present:
+
+- What the mod adds.
+- Important items, blocks, entities, or systems.
+- Keys and controls.
+- Interaction or usage logic.
+
+Translate English source content into Chinese. Keep names, commands, item IDs, key IDs, and version numbers unchanged.
+
+Avoid repeated explanations across cards. If several addons share the same dependency or base mechanic, mention the shared part once in the dependency/base mod card; addon cards should only describe their own additions.
 
 Libraries and APIs should be terse: “无需操作；后台前置。”
 

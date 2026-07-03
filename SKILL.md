@@ -38,6 +38,15 @@ For each mod card, prefer this structure:
 - Loader/source note when helpful.
 - Jar filename and external links.
 
+For mod index descriptions:
+
+- Build the search name from the jar filename by stripping Minecraft versions, mod versions, loader suffixes, and beta/release tags; for example `Argentina's delight 1.20.1 (3.0 beta).jar` becomes `Argentina's delight`.
+- Search CurseForge with that cleaned name. If several results appear, use the first result unless local metadata gives a verified exact page.
+- Keep every mod independent. Preserve the original mod page's description structure instead of summarizing the whole pack into攻略.
+- Extract description, important items/blocks/entities, keys, controls, and interaction logic when present.
+- Translate English source content into Chinese while keeping names, commands, item IDs, key IDs, and version numbers unchanged.
+- Avoid repeated explanations across cards; describe shared mechanics once, then keep addon cards focused on their own additions.
+
 ## Sorting and Search
 
 Prioritize actual gameplay mods over libraries:
