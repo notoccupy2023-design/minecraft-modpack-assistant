@@ -1,4 +1,4 @@
 interface:
   display_name: "我的世界整合包助手"
-  short_description: "分析我的世界整合包目录并生成中文攻略和模组索引页面"
-  default_prompt: "使用 $minecraft-modpack-assistant 扫描当前整合包，并生成可直接打开的中文离线指南。"
+  short_description: "分析整合包可运行性、模组冲突并生成中文离线指南"
+  default_prompt: "使用 $minecraft-modpack-assistant 扫描当前整合包，优先查询 Modrinth，分析可运行性与玩法冲突，并生成中文离线指南。"

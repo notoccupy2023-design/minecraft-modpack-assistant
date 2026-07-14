@@ -6,12 +6,17 @@
 
 - 扫描 `mods/*.jar`，读取 Forge/NeoForge/Fabric/Quilt 元数据。
 - 区分加载器和来源提示，例如 CurseForge、Modrinth、GitHub。
+- 计算 jar SHA-1，优先通过 Modrinth 精确识别版本，再回退到 CurseForge 搜索。
 - 从 jar 文件名提取干净的 Mod 搜索名，例如把 `Argentina's delight 1.20.1 (3.0 beta).jar` 识别为 `Argentina's delight`。
 - 提取 Mod 声明的快捷键名称，并读取客户端 `options.txt` 中的真实快捷键绑定。
 - 标记同一真实按键绑定多个功能造成的冲突。
+- 检查加载器不匹配、重复 jar、缺失前置和 Mod 自声明不兼容。
+- 结合日志、官方说明与本地配置分析已知冲突和玩法重叠风险。
 - 生成面向玩家的中文整合包指南，包括推荐路线、操作手册、Mod 索引和资料来源。
 
 ## 快速使用
+
+扫描脚本仅使用 Python 标准库，需要 Python 3.11 或更高版本。
 
 在 Codex 中处理 Minecraft 整合包项目时启用本 Skill。项目目录通常应包含：
 
@@ -24,20 +29,24 @@ config/
 需要重新扫描 Mod 清单或快捷键声明时，可运行：
 
 ```powershell
-python scripts/modpack_scan.py <整合包目录或 mods 目录> --json
+python scripts/modpack_scan.py <整合包目录或 mods 目录> --report
 ```
 
 省略目录时默认扫描当前目录。首次使用可先运行 `python scripts/modpack_scan.py --self-check`。
 
 ## Mod 索引简介规则
 
-- 使用清洗后的 jar 名称进入 CurseForge 搜索。
-- 如果出现多个结果，默认取第一个，除非本地元数据提供了更准确的页面。
+- 优先使用 Modrinth SHA-1 精确版本查询；未收录时按名称、游戏版本和加载器搜索。
+- Modrinth 无可靠结果时再进入 CurseForge 的 Mod 分类；多个结果默认取第一个并核对版本。
 - 每个 Mod 独立介绍，不把多个 Mod 合并成整合包攻略。
 - 尽量保留原 Mod 页面的介绍结构。
 - 提取简介、重要物品、按键、交互逻辑等原始信息。
 - 英文内容统一翻译为中文，名称、命令、物品 ID、按键 ID 和版本号保持原样。
 - 重复扫描时避免重复说明；共享机制只在基础 Mod 中说明一次。
+
+## 冲突分析
+
+报告优先展示影响启动的阻断项，再展示有版本和来源证据的已知不兼容、玩法重叠/平衡风险，最后才是按键提示。若目录包含 `logs/latest.log` 或 `crash-reports/`，实际日志结论优先。
 
 ## 快捷键规则
 
