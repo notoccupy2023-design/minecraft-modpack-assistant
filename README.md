@@ -1,13 +1,14 @@
-# Minecraft Modpack Assistant
+# 我的世界整合包助手
 
 一个用于分析 Minecraft 整合包并生成中文游玩指南的 Codex Skill。
 
 ## 能做什么
 
-- 扫描 `mods/*.jar`，读取 Forge/Fabric/Quilt 元数据。
+- 扫描 `mods/*.jar`，读取 Forge/NeoForge/Fabric/Quilt 元数据。
 - 区分加载器和来源提示，例如 CurseForge、Modrinth、GitHub。
 - 从 jar 文件名提取干净的 Mod 搜索名，例如把 `Argentina's delight 1.20.1 (3.0 beta).jar` 识别为 `Argentina's delight`。
 - 提取 Mod 声明的快捷键名称，并读取客户端 `options.txt` 中的真实快捷键绑定。
+- 标记同一真实按键绑定多个功能造成的冲突。
 - 生成面向玩家的中文整合包指南，包括推荐路线、操作手册、Mod 索引和资料来源。
 
 ## 快速使用
@@ -23,8 +24,10 @@ config/
 需要重新扫描 Mod 清单或快捷键声明时，可运行：
 
 ```powershell
-python scripts/modpack_scan.py <整合包目录> --json
+python scripts/modpack_scan.py <整合包目录或 mods 目录> --json
 ```
+
+省略目录时默认扫描当前目录。首次使用可先运行 `python scripts/modpack_scan.py --self-check`。
 
 ## Mod 索引简介规则
 

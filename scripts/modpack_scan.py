@@ -1,13 +1,14 @@
 ﻿#!/usr/bin/env python3
-"""Scan Minecraft mod jars for metadata and declared keybind labels.
+"""扫描 Minecraft Mod jar 的元数据、来源提示和快捷键。
 
-Usage:
-  python modpack_scan.py <modpack-root> [--json]
+用法：
+  python modpack_scan.py [整合包目录或 mods 目录] [--json]
 """
 from __future__ import annotations
 
 import argparse
 import csv
+from io import BytesIO
 import json
 import re
 import sys
@@ -28,8 +29,18 @@ def read_triple_toml_value(text: str, key: str) -> str:
 
 def clean_name(filename: str) -> str:
     name = re.sub(r"\.jar$", "", filename, flags=re.I)
-    name = re.sub(r"[\[\]（）()]", " ", name)
-    name = re.sub(r"[-_+]?(forge|fabric|mc)?v?\d[\w.\-+ ]*$", "", name, flags=re.I)
+    name = re.sub(
+        r"\s*[\[（(][^\]）)]*(?:\d|forge|neoforge|fabric|quilt|alpha|beta|release|snapshot)[^\]）)]*[\]）)]\s*$",
+        "",
+        name,
+        flags=re.I,
+    )
+    suffix = re.compile(
+        r"(?:[-_+ ]+(?:(?:mc)?v?\d+(?:\.\d+)+(?:[-+._a-z0-9]*)?|neoforge|forge|fabric|quilt|alpha|beta|release|snapshot|client|server))$",
+        re.I,
+    )
+    while suffix.search(name):
+        name = suffix.sub("", name)
     return re.sub(r"\s+", " ", name).strip(" -_") or filename
 
 
@@ -50,9 +61,10 @@ def metadata_from_jar(jar: Path, real_bindings: dict[str, str] | None = None) ->
     try:
         with zipfile.ZipFile(jar) as zf:
             names = set(zf.namelist())
-            if "META-INF/mods.toml" in names:
-                result["loader"] = "forge"
-                text = zf.read("META-INF/mods.toml").decode("utf-8", errors="replace")
+            forge_meta = next((p for p in ("META-INF/neoforge.mods.toml", "META-INF/mods.toml") if p in names), "")
+            if forge_meta:
+                result["loader"] = "neoforge" if "neoforge" in forge_meta else "forge"
+                text = zf.read(forge_meta).decode("utf-8", errors="replace")
                 first = text.split("[[dependencies.", 1)[0]
                 result["modId"] = read_toml_value(first, "modId")
                 result["name"] = read_toml_value(first, "displayName")
@@ -111,7 +123,7 @@ def read_options_keybinds(root: Path) -> dict[str, str]:
 
 
 def keybinds_from_zip(zf: zipfile.ZipFile, real_bindings: dict[str, str]) -> list[dict]:
-    found = []
+    found = {}
     for lang in ("zh_cn", "en_us"):
         for entry in zf.namelist():
             if not re.match(rf"assets/.*/lang/{lang}\.json$", entry):
@@ -121,22 +133,19 @@ def keybinds_from_zip(zf: zipfile.ZipFile, real_bindings: dict[str, str]) -> lis
             except json.JSONDecodeError:
                 continue
             for key, label in data.items():
-                if is_keybind_key(key) and isinstance(label, str) and "\n" not in label:
-                    found.append({
+                if key not in found and is_keybind_key(key) and isinstance(label, str) and "\n" not in label:
+                    found[key] = {
                         "key": key,
                         "label": label,
                         "declaredName": label,
                         "binding": real_bindings.get(key, "未绑定"),
                         "lang": lang,
-                    })
-        if found:
-            break
+                        "conflict": False,
+                    }
     dedup = []
-    seen = set()
-    for item in found:
-        if item["key"] in seen or "categor" in item["key"].lower():
+    for item in found.values():
+        if "categor" in item["key"].lower():
             continue
-        seen.add(item["key"])
         dedup.append(item)
     return dedup[:12]
 
@@ -148,9 +157,12 @@ def is_keybind_key(key: str) -> bool:
 
 
 def scan(root: Path) -> list[dict]:
+    root = root.expanduser()
+    if root.name.lower() == "mods" and root.is_dir():
+        root = root.parent
     mods = root / "mods"
     if not mods.exists():
-        raise SystemExit(f"mods folder not found: {mods}")
+        raise SystemExit(f"未找到 mods 目录：{mods}")
     real_bindings = read_options_keybinds(root)
     rows = [metadata_from_jar(path, real_bindings) for path in sorted(mods.glob("*.jar"), key=lambda p: p.name.lower())]
     deduped = []
@@ -161,14 +173,44 @@ def scan(root: Path) -> list[dict]:
             continue
         seen.add(key)
         deduped.append(row)
+    bindings = {}
+    for row in deduped:
+        for item in row["keybinds"]:
+            if item["binding"] != "未绑定":
+                bindings.setdefault(item["binding"], []).append(item)
+    for items in bindings.values():
+        if len(items) > 1:
+            for item in items:
+                item["conflict"] = True
     return deduped
 
 
+def self_check() -> None:
+    assert clean_name("Argentina's delight 1.20.1 (3.0 beta).jar") == "Argentina's delight"
+    assert clean_name("example-mod-neoforge-1.21.1-2.4.0.jar") == "example-mod"
+    assert source_hint("https://modrinth.com/mod/example", "example.jar") == "modrinth"
+    jar = BytesIO()
+    with zipfile.ZipFile(jar, "w") as zf:
+        zf.writestr("assets/demo/lang/zh_cn.json", json.dumps({"key.demo.open": "打开"}))
+        zf.writestr("assets/demo/lang/en_us.json", json.dumps({"key.demo.open": "Open", "key.demo.mode": "Mode"}))
+    with zipfile.ZipFile(jar) as zf:
+        keys = keybinds_from_zip(zf, {"key.demo.open": "key.keyboard.g"})
+    assert [(item["key"], item["binding"]) for item in keys] == [
+        ("key.demo.open", "key.keyboard.g"),
+        ("key.demo.mode", "未绑定"),
+    ]
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("root", type=Path)
-    parser.add_argument("--json", action="store_true")
+    parser = argparse.ArgumentParser(description="扫描 Minecraft 整合包中的 Mod、来源和快捷键")
+    parser.add_argument("root", nargs="?", type=Path, default=Path.cwd(), help="整合包目录或 mods 目录，默认当前目录")
+    parser.add_argument("--json", action="store_true", help="输出 UTF-8 JSON")
+    parser.add_argument("--self-check", action="store_true", help="运行内置自检")
     args = parser.parse_args()
+    if args.self_check:
+        self_check()
+        print("自检通过")
+        return
     rows = scan(args.root)
     if args.json:
         print(json.dumps(rows, ensure_ascii=False, indent=2))

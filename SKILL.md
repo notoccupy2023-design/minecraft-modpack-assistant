@@ -1,87 +1,62 @@
 ---
 name: minecraft-modpack-assistant
-description: Build Chinese Minecraft modpack guides and mod indexes from a local mods folder. Use when the user asks Codex to analyze Minecraft Forge/Fabric/Quilt mod jars, detect loader and source hints such as CurseForge or Modrinth, identify mod names, create or update a UTF-8 offline HTML guide, add gameplay routes, keybind/control tables, mod cards, sorting/filtering/search logic, or maintain project handoff docs for a Minecraft modpack guide.
+description: 从本地 mods 目录生成简体中文 Minecraft 整合包指南和 Mod 索引。用于扫描 Forge、NeoForge、Fabric、Quilt 的 jar，识别 Mod 名称与来源，查询 CurseForge/Modrinth，翻译 Mod 简介，提取物品、按键、控制与交互逻辑，分析真实按键绑定及冲突，并生成或更新 UTF-8 离线 HTML 指南。
 ---
 
-# Minecraft Modpack Assistant
+# 我的世界整合包助手
 
-Use this skill to turn a Minecraft modpack folder into a practical Chinese guide, not a raw mod dump.
+把整合包目录整理成玩家拿来就能用的中文指南，不输出原始 Mod 清单，也不臆造玩法。
 
-## Workflow
+## 默认执行流程
 
-1. Inspect the project first: list `mods/`, check for `options.txt`, `config/`, existing generator scripts, HTML output, and `AGENTS.md`.
-2. Extract mod facts from jar metadata before guessing names. Prefer `META-INF/mods.toml`, then `fabric.mod.json`/`quilt.mod.json`, then filename fallback.
-3. Detect loader separately from source: Forge/Fabric/Quilt are loaders; CurseForge/Modrinth/GitHub are source or hosting hints.
-4. Use `scripts/modpack_scan.py` when a fresh mod inventory, loader/source summary, or keybind declaration list is needed.
-5. Build/update a local generator script in the target project when the guide must be regenerated repeatedly. Keep the generated HTML as an output artifact, not the source of truth.
-6. Generate one UTF-8 offline HTML file with inline CSS/JS unless the user asks otherwise.
-7. Verify after changes: regenerate HTML, check card counts, and run a JS syntax check on the embedded script.
+1. 先读取项目内的 `AGENTS.md`，再检查 `mods/`、`options.txt`、`config/`、`defaultconfigs/`、任务配置、现有生成脚本和 HTML。
+2. 用户只给一个路径时直接执行，不追问输出格式。路径是 `mods/` 时使用其父目录；未给路径时从当前目录查找。
+3. 运行 `python scripts/modpack_scan.py <整合包目录> --json` 获取基础索引。首次使用或修改脚本后运行 `--self-check`。
+4. 从 `manifest.json`、启动器实例配置和 jar 元数据判断 Minecraft 版本及 Forge/NeoForge/Fabric/Quilt 环境。加载器与下载来源分开记录。
+5. 优先读取 jar 内的 `META-INF/neoforge.mods.toml`、`META-INF/mods.toml`、`fabric.mod.json` 或 `quilt.mod.json`，文件名只作后备。
+6. 查询每个 Mod 的原始页面，按“资料查询规则”提取并翻译内容。重复扫描时复用已验证内容，只补新增或变化的 Mod。
+7. 默认生成一个 UTF-8、CSS/JS 内联、可离线打开的 HTML。若项目已有生成器，只改生成器并重新生成成品。
+8. 完成后检查 Mod 数量、搜索、脚本语法、中文编码、快捷键状态和前十张卡片排序。
 
-## Guide Content
+## 即开即用默认值
 
-Include these sections when producing a full guide:
+- 默认输出：整合包根目录下的 `modpack-guide.html`。
+- 默认语言：简体中文；英文资料翻译为中文，Mod 名、命令、ID、键名和版本号保持原样。
+- 默认首页顺序：开始游玩、核心玩法、操作手册、Mod 索引、资料来源。
+- 默认优先回答：任务/指南入口、JEI/REI 查配方方式、地图、背包、连锁挖掘、模式切换、常用机器或魔法入口。
+- 缺少可靠资料时保留本地事实并标记“待核实”，不要补写猜测。
+- 不生成安装器、不修改 jar、不改玩家配置，除非用户明确要求。
 
-- Recommended route: early/mid/late/long-term progression.
-- Core gameplay: the few actions that define the pack.
-- Operation manual: shortcut tables and practical steps in one navigation entry.
-- Mod index: searchable/filterable cards.
-- Sources: MC??, CurseForge/Modrinth/GitHub hints, loader, and local jar metadata notes.
+## 资料查询规则
 
-For each mod card, prefer this structure:
+- 从 jar 文件名移除 Minecraft 版本、Mod 版本、加载器、客户端/服务端及 alpha/beta/release 等后缀。例如 `Argentina's delight 1.20.1 (3.0 beta).jar` 取 `Argentina's delight`。
+- 使用清洗后的名称搜索 CurseForge；存在多个结果时默认取第一个。本地元数据提供精确主页时优先使用精确主页。
+- 必要时再查 Modrinth、GitHub README、官方 Wiki 或作者说明，记录实际使用的页面链接。
+- 每个 Mod 独立介绍，尽量保留原页面的标题和段落顺序，不把 Mod 索引写成整合包攻略。
+- 提取原页面实际提供的简介、重要物品/方块/实体、按键、控制、前置条件和交互逻辑。
+- 基础机制只在基础 Mod 中说明一次；附属卡片只写自己的新增内容。库/API 简写为“无需操作；后台前置”。
+- 页面内容与当前 Minecraft/加载器版本不符时，不把它当作当前环境事实。
 
-- Chinese title.
-- `Original: ... ? modId: ...` metadata, localized if the target page is Chinese.
-- Short Chinese description.
-- Key items / keys.
-- Mod-declared keys, only when detected.
-- How to use and advice in the same block.
-- Loader/source note when helpful.
-- Jar filename and external links.
+## 快捷键规则
 
-For mod index descriptions:
+- 完整读取客户端 `options.txt` 的 `key_...:key.keyboard...` 或鼠标绑定；不要把服务端配置当成真实客户端按键。
+- 优先使用 jar 内 `zh_cn.json` 的声明名，再用 `en_us.json` 补缺。
+- 没有真实绑定时同时显示 `未绑定` 和“Mod 声明的快捷键名称”。
+- 同一真实按键绑定多个功能时标记冲突；不要擅自替玩家改键。
+- 对任务书、地图、背包、连锁挖掘、模式切换等高频功能优先展示绑定状态。
 
-- Build the search name from the jar filename by stripping Minecraft versions, mod versions, loader suffixes, and beta/release tags; for example `Argentina's delight 1.20.1 (3.0 beta).jar` becomes `Argentina's delight`.
-- Search CurseForge with that cleaned name. If several results appear, use the first result unless local metadata gives a verified exact page.
-- Keep every mod independent. Preserve the original mod page's description structure instead of summarizing the whole pack into攻略.
-- Extract description, important items/blocks/entities, keys, controls, and interaction logic when present.
-- Translate English source content into Chinese while keeping names, commands, item IDs, key IDs, and version numbers unchanged.
-- Avoid repeated explanations across cards; describe shared mechanics once, then keep addon cards focused on their own additions.
+## 内容和排序
 
-## Sorting and Search
+- 推荐路线只描述整合包自身的前期、中期、后期目标；不要复述所有 Mod 卡片。
+- 操作手册写玩家立刻需要的入口和步骤，优先引用任务配置、本地配方和真实绑定。
+- Mod 索引按以下顺序：主题核心与 JEI/REI/Jade 类工具、内容附属、自动化/存储/探索、装饰与体验、性能、库/API。
+- 搜索字段只包含名称、modId、jar 名、分类和短简介，避免通用建议造成误命中。
+- 每张卡片至少包含中文标题、原名/modId、简述、关键内容、操作/交互、按键状态、jar 名和来源链接；没有证据的字段省略。
 
-Prioritize actual gameplay mods over libraries:
+## 安全与验收
 
-1. Main pack theme and core helpers, e.g. Farmer's Delight, JEI, Jade, AppleSkin.
-2. Kitchen/food addons.
-3. Automation, storage, maps, transport, exploration, dimensions.
-4. Decoration, ecology, helper UX.
-5. Performance mods.
-6. Libraries and APIs last.
+- 不删除、移动或修改 `mods/` 内文件；禁止批量删除任何文件或目录。
+- 保留用户已有成果，生成 HTML 前优先更新源生成器。
+- 验收时确认：UTF-8 meta 存在；唯一 Mod 数与卡片数一致；内联 JS 可解析；搜索不过度匹配；游戏内容排在库/API 前；绑定冲突和未绑定状态清楚。
 
-Keep search narrow enough to avoid false positives. Index names, modId, jar filename, category, and short description. Do not index generic advice text unless the user explicitly wants full-text search.
-
-## Keybinds
-
-- Read complete client `options.txt` first. Real bindings appear as `key_...:key.keyboard...` lines.
-- If `options.txt` lacks key lines, say so and fall back to jar language-file key declarations plus common defaults.
-- Many jars declare keybind labels but not the bound key. Show these as unbound / check Controls unless a real binding or known default is available.
-- When no real binding is detected, display `未绑定` plus the mod-declared keybind name.
-- Do not claim server-side or resource-pack-only `options.txt` contains real client keybinds.
-
-## Sources and Loader Detection
-
-- Loader is detected from metadata files: `META-INF/mods.toml` => Forge, `fabric.mod.json` => Fabric, `quilt.mod.json` => Quilt.
-- Source hints are detected from `displayURL`, Fabric/Quilt contact homepage, or filename/domain clues.
-- CurseForge is not a loader. Treat it as a distribution/source hint.
-- Use exact MC??, CurseForge, or Modrinth links only when verified or confidently mapped. Otherwise use search links.
-- Summarize source facts in Chinese; do not copy long source text.
-
-## Safety
-
-- Do not delete, move, or modify files in `mods/` unless explicitly requested.
-- Never batch-delete files or directories.
-- Preserve existing user artifacts; generated HTML can be regenerated, but mod jars are source inputs.
-
-## References
-
-Read `references/guide-pattern.md` when implementing or revising HTML structure, loader/source display, sorting rules, or card content policy.
+实现或修改 HTML 结构、来源显示、排序和卡片内容时，读取 `references/guide-pattern.md`。

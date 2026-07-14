@@ -1,81 +1,63 @@
-﻿# Minecraft Modpack Guide Pattern
+# 我的世界整合包指南规则
 
-## Local Inputs
+## 本地输入
 
-- `mods/*.jar`: primary inventory.
-- `options.txt`: only useful for real keybinds if it contains `key_...` lines.
-- `config/` and `defaultconfigs/`: useful for mod behavior, rarely for keybinds.
-- Existing generated HTML: visual target only; update the generator when possible.
+- `mods/*.jar`：Mod 清单和元数据主来源。
+- `options.txt`：只在包含 `key_...` 行时作为真实按键来源。
+- `config/`、`defaultconfigs/`：判断整合包实际修改后的行为。
+- `manifest.json`、启动器实例配置：判断 Minecraft、加载器和整合包版本。
+- 任务配置、脚本与配方：判断当前整合包的实际进度，不照搬原 Mod 默认玩法。
+- 现有 HTML：只作视觉参考；存在生成器时修改生成器。
 
-## Metadata Extraction
+## 元数据和环境
 
-Distinguish loader from source. Forge/Fabric/Quilt are loaders. CurseForge/Modrinth/GitHub are source or hosting hints.
+加载器与来源必须分开：Forge/NeoForge/Fabric/Quilt 是加载器，CurseForge/Modrinth/GitHub 是来源。
 
-For Forge jars, read `META-INF/mods.toml` and capture the first mod block before dependencies. Useful fields: `modId`, `displayName`, `description`, `displayURL`, `issueTrackerURL`.
+- NeoForge：读取 `META-INF/neoforge.mods.toml`。
+- Forge：读取 `META-INF/mods.toml`，只取依赖块之前的首个 Mod 块。
+- Fabric：读取 `fabric.mod.json` 的 `id`、`name`、`description`、`contact.homepage`。
+- Quilt：读取 `quilt.mod.json` 的对应字段。
+- 缺少元数据时才清洗 jar 文件名作为名称。
 
-For Fabric/Quilt jars, parse `fabric.mod.json` or `quilt.mod.json` and capture `id`, `name`, `description`, `contact.homepage` if present.
+搜索 CurseForge 时使用清洗后的 jar 名，去掉游戏版本、Mod 版本、加载器和发布阶段。例如 `Argentina's delight 1.20.1 (3.0 beta).jar` 应得到 `Argentina's delight`。多个结果默认取第一个，除非本地元数据已给出精确页面。
 
-If metadata is missing, derive a readable name from the jar filename and mark confidence low in internal reasoning; do not expose uncertainty noisily unless it affects the guide.
+## 玩家入口检查
 
-For CurseForge lookup, search with the cleaned jar name, not the full filename. Strip Minecraft versions, mod versions, loader suffixes, and beta/release tags; for example `Argentina's delight 1.20.1 (3.0 beta).jar` becomes `Argentina's delight`. If multiple CurseForge results appear, use the first result unless a local metadata URL proves a better match.
+社区中最常见的首次游玩障碍是找不到任务入口、不会沿配方追踪材料，以及大量 Mod 按键冲突。因此完整指南应优先检查：
 
-## Loader and Source Hints
+- 任务书的物品、背包界面按钮、快捷键或命令入口。
+- JEI/REI 的配方与用途查看方式，以及整合包是否改过默认键。
+- 地图、路径点、背包、连锁挖掘、模式切换和远程终端。
+- 同键多功能、未绑定功能和仅在特定界面生效的按键。
 
-Detect loader from metadata files: `META-INF/mods.toml` means Forge, `fabric.mod.json` means Fabric, and `quilt.mod.json` means Quilt. Detect source hints from `displayURL`, Fabric/Quilt contact homepage, or known domains in filenames/metadata. Use `curseforge`, `modrinth`, `github`, or `unknown`. Do not label CurseForge as a loader.
+只写当前整合包中实际存在的入口，不列通用键位猜测。
 
-## Keybind Extraction
+## 快捷键提取
 
-Read `assets/*/lang/zh_cn.json` first, then `en_us.json`. Candidate key labels usually start with:
+先读 `assets/*/lang/zh_cn.json`，再用 `en_us.json` 补齐缺失键。候选键通常以 `key.`、`keybind.`、`create.keyinfo.`、`artifacts.key.` 开头或包含 `.key.`。过滤物品、方块、实体、提示、音效、进度和纯分类文本。
 
-- `key.`
-- `keybind.`
-- mod-specific key namespaces such as `create.keyinfo.` or `artifacts.key.`
+找不到 `options.txt` 真实绑定时显示 `未绑定`，同时保留 Mod 声明名称。多个功能使用同一真实绑定时标记冲突，不自动给出新键位。
 
-Filter out item/block/entity/tooltip/advancement text. Labels containing `%s` are often UI templates, not direct keybind names; include only when useful.
+## 离线 HTML
 
-If no matching real binding is found in client `options.txt`, show the binding as `未绑定` and still show the mod-declared keybind name.
+默认生成单个离线文件：
 
-## HTML UX Pattern
+- CSS 和 JS 内联，不依赖网络字体或运行时库。
+- 使用响应式布局、顶部导航、搜索框和分类筛选。
+- 导航顺序为“开始游玩、核心玩法、操作手册、Mod 索引、资料来源”。
+- 首屏直接展示当前整合包名称、版本环境和开始入口，不制作宣传落地页。
 
-Keep the HTML offline and self-contained:
+## Mod 卡片
 
-- inline CSS and JS;
-- responsive cards;
-- sticky top navigation;
-- search input plus category chips;
-- no external fonts or runtime dependencies.
+每个 Mod 独立成卡，保留原页面的信息结构。按来源存在的内容提取：功能简介、重要物品/方块/实体/系统、按键与控制、使用方式及前置条件。
 
-Recommended nav:
+英文内容翻成简体中文，保留专名、命令、ID、键名和版本号。共享机制只在基础 Mod 卡片中解释；附属只写新增内容。库/API 使用“无需操作；后台前置”。来源与当前游戏版本不匹配时省略版本相关结论。
 
-1. 推荐路线
-2. 核心玩法
-3. 操作手册
-4. mod 索引
-5. 资料来源
+## 验收
 
-## Card Content Policy
-
-Keep each mod card independent. Do not merge several mods into one gameplay summary, and do not rewrite the mod index into a pack攻略. Preserve the original mod page structure as much as the card format allows.
-
-Use the mod page's own description first. Extract and translate these parts when present:
-
-- What the mod adds.
-- Important items, blocks, entities, or systems.
-- Keys and controls.
-- Interaction or usage logic.
-
-Translate English source content into Chinese. Keep names, commands, item IDs, key IDs, and version numbers unchanged.
-
-Avoid repeated explanations across cards. If several addons share the same dependency or base mechanic, mention the shared part once in the dependency/base mod card; addon cards should only describe their own additions.
-
-Libraries and APIs should be terse: “无需操作；后台前置。”
-
-## Verification
-
-After regenerating:
-
-- Confirm UTF-8 meta tag exists.
-- Confirm card count matches unique modIds if duplicates are merged.
-- Confirm JS parses with `new Function(script)`.
-- Spot-check search terms that previously overmatched.
-- Spot-check first 10 cards are gameplay-relevant, not libraries.
+- HTML 包含 UTF-8 meta。
+- 卡片数与去重后的 modId 数一致。
+- 内联 JS 可用 `new Function(script)` 解析。
+- 搜索词不会因通用建议造成大面积误命中。
+- 前十张卡片优先是实际玩法内容。
+- 抽查任务入口、JEI/REI、地图和高频按键的状态。
