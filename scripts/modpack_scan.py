@@ -66,6 +66,7 @@ def metadata_from_jar(jar: Path, real_bindings: dict[str, str] | None = None) ->
             "https://www.curseforge.com/minecraft/search"
             f"?class=mc-mods&page=1&pageSize=20&search={quote_plus(search_name)}&sortBy=relevancy"
         ),
+        "bbsmcSearch": f"https://bbsmc.net/mods?q={quote_plus(search_name)}",
         "description": "",
         "keybinds": [],
         "duplicateJars": [],
@@ -203,6 +204,8 @@ def source_hint(homepage: str, filename: str) -> str:
         return "modrinth"
     if "curseforge" in text:
         return "curseforge"
+    if "bbsmc.net" in text:
+        return "bbsmc"
     if "github" in text:
         return "github"
     return "unknown"
@@ -489,6 +492,7 @@ def self_check() -> None:
     assert clean_name("Argentina's delight 1.20.1 (3.0 beta).jar") == "Argentina's delight"
     assert clean_name("example-mod-neoforge-1.21.1-2.4.0.jar") == "example-mod"
     assert source_hint("https://curseforge.com https://modrinth.com", "example.jar") == "modrinth"
+    assert source_hint("https://bbsmc.net/mod/demo", "example.jar") == "bbsmc"
     parsed = tomllib.loads("[[mods]]\nmodId='demo'\ndescription='''第一行\n第二行'''\n")
     assert parsed["mods"][0]["description"] == "第一行\n第二行"
     jar = BytesIO()

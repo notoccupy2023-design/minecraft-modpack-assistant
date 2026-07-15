@@ -13,7 +13,7 @@
 
 ## 元数据和环境
 
-加载器与来源必须分开：Forge/NeoForge/Fabric/Quilt 是加载器，CurseForge/Modrinth/GitHub 是来源。
+加载器与来源必须分开：Forge/NeoForge/Fabric/Quilt 是加载器，Modrinth/CurseForge/BBSMC/GitHub 是来源。
 
 - NeoForge：读取 `META-INF/neoforge.mods.toml`。
 - Forge：用 TOML 解析 `META-INF/mods.toml` 的 `[[mods]]` 和 `[[dependencies.<modid>]]`，兼容单引号多行简介。
@@ -21,7 +21,7 @@
 - Quilt：读取 `quilt.mod.json` 的对应字段。
 - 缺少元数据时才清洗 jar 文件名作为名称。
 
-优先用 jar SHA-1 调用 Modrinth `GET /version_file/{hash}?algorithm=sha1` 精确识别版本，并读取其游戏版本、加载器和依赖类型。哈希无结果时，使用清洗后的 jar 名搜索 Modrinth，筛选 `project_type=mod`、当前 Minecraft 版本和加载器。仍无可靠结果时再搜索 CurseForge 的 Mod 分类；多个结果默认取第一个，并核对版本与加载器。
+优先用 jar SHA-1 调用 Modrinth `GET /version_file/{hash}?algorithm=sha1` 精确识别版本，并读取其游戏版本、加载器和依赖类型。哈希无结果时，使用清洗后的 jar 名搜索 Modrinth，筛选 `project_type=mod`、当前 Minecraft 版本和加载器。仍无可靠结果时再搜索 CurseForge 的 Mod 分类；多个结果默认取第一个，并核对版本与加载器。之后可查 BBSMC 的 Mod 或整合包页面，补充中文名称、中文说明、整合修改、更新日志和社区反馈；BBSMC 不替代 jar、Modrinth、CurseForge 或作者资料中的精确版本事实。
 
 清洗名称时去掉游戏版本、Mod 版本、加载器和发布阶段。例如 `Argentina's delight 1.20.1 (3.0 beta).jar` 应得到 `Argentina's delight`。
 
@@ -33,6 +33,7 @@
 - jar 元数据中的必需依赖、`breaks`、`conflicts`、`incompatible`、`discouraged`。
 - Modrinth 精确版本的加载器、游戏版本、环境和 `incompatible` 依赖。
 - 作者 issue tracker、官方 Wiki、CurseForge 页面中的版本化说明。
+- BBSMC 中能匹配项目、版本和加载器的更新日志、讨论或反馈；只匹配到名称时作为待核实线索。
 - 根据功能重叠和本地配置推断的玩法风险。
 
 报告分为“可运行性阻断、已知不兼容、玩法重叠/平衡风险、操作提示”。已知问题必须保留版本与来源；推断只能标成“高风险”或“需关注”。

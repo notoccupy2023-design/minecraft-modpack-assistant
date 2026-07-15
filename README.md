@@ -7,7 +7,7 @@
 - 读取 Forge、NeoForge、Fabric、Quilt jar 元数据。
 - 从 jar 文件名清除游戏版本、Mod 版本、加载器和发布阶段后缀。
 - 计算每个 jar 的 SHA-1，生成 Modrinth 精确版本查询地址。
-- 生成 Modrinth 和 CurseForge 的 Mod 分类搜索地址。
+- 生成 Modrinth、CurseForge 和 BBSMC 的 Mod 分类搜索地址。
 - 读取 Mod 版本、运行环境、必需前置和元数据声明的不兼容项。
 - 识别重复 jar、重复 modId、加载器混用、缺失前置和损坏元数据。
 - 读取 `options.txt` 的真实绑定，并从新旧语言文件补充 Mod 声明的快捷键名称。
@@ -20,9 +20,10 @@
 - 次选：在 Modrinth 中按 Mod 类型、Minecraft 版本和加载器搜索。
 - 补充：采用 jar 元数据中的精确项目主页。
 - 回退：搜索 CurseForge 的 Mod 分类；多个结果默认取第一个，并核对版本与加载器。
+- 中文补充：使用 [BBSMC](https://bbsmc.net/) 核对中文名称，并补充整合包改动、更新日志、讨论和反馈线索；不覆盖前述精确元数据。
 - 已知问题：继续核对作者 issue tracker、官方 Wiki 和版本化说明。
 
-扫描脚本本身保持离线，不会自动请求外部平台。它负责输出 SHA-1、`modrinthVersionLookup`、`modrinthSearch` 和 `curseForgeSearch`；联网检索与中文整理由 Skill 工作流执行。
+扫描脚本本身保持离线，不会自动请求外部平台。它负责输出 SHA-1、`modrinthVersionLookup`、`modrinthSearch`、`curseForgeSearch` 和 `bbsmcSearch`；联网检索与中文整理由 Skill 工作流执行。
 
 ## 冲突分析
 
@@ -117,7 +118,7 @@ python scripts/modpack_scan.py "D:\Minecraft\Instances\示例整合包" --report
 
 - 不删除、移动或修改 `mods/` 内的 jar。
 - 不自动修改玩家配置或按键。
-- 不把论坛猜测写成已知冲突。
+- 不把 BBSMC 或其他论坛中的猜测直接写成已知冲突。
 - 生成的 HTML 和 JSON 是输出物；jar、本地配置、任务与脚本是事实来源。
 
 Skill 的完整执行规则见 [SKILL.md](SKILL.md)，HTML 与内容规范见 [references/guide-pattern.md](references/guide-pattern.md)。
